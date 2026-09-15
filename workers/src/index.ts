@@ -338,18 +338,24 @@ app.post("/api/send", async (c) => {
     }
   }
 
-  const result = await sendViaResend(c.env, {
-    fromAddress,
-    fromName,
-    to: body.to,
-    cc: body.cc,
-    subject: body.subject,
-    text: body.text,
-    html: body.html,
-    inReplyTo,
-    references,
-    attachments,
-  });
+  let result;
+  try {
+    result = await sendViaResend(c.env, {
+      fromAddress,
+      fromName,
+      to: body.to,
+      cc: body.cc,
+      subject: body.subject,
+      text: body.text,
+      html: body.html,
+      inReplyTo,
+      references,
+      attachments,
+    });
+  } catch (err) {
+    // Surface Resend's actual status/message to the client instead of a generic 500.
+    return c.json({ error: err instanceof Error ? err.message : "send failed" }, 502);
+  }
 
   if (!threadId) {
     threadId = await resolveThreadId({ inReplyTo, references, subject: body.subject }, async (mid) => {

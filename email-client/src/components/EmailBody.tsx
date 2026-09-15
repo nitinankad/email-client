@@ -130,16 +130,19 @@ export default function EmailBody({ message }: { message: Message }) {
   }, []);
 
   // Fires reliably on every srcDoc load (React attaches before load), then keeps
-  // the height in sync as images/fonts reflow the content.
+  // the height in sync as images/fonts reflow the content. We measure several
+  // times because scrollHeight can under-report before fonts/layout settle.
   const handleLoad = useCallback(() => {
     measure();
     requestAnimationFrame(measure);
+    for (const t of [50, 150, 400, 1000]) setTimeout(measure, t);
     try {
       const doc = iframeRef.current?.contentWindow?.document;
       if (!doc) return;
       observerRef.current?.disconnect();
       const ro = new ResizeObserver(() => measure());
       ro.observe(doc.documentElement);
+      ro.observe(doc.body);
       observerRef.current = ro;
     } catch {
       /* ignore */
