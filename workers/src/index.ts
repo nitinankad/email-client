@@ -200,7 +200,13 @@ app.get("/api/threads/:id", async (c) => {
     attachments: attByEmail.get(r.id) ?? [],
   }));
 
-  return c.json({ threadId: id, subject: rows[rows.length - 1].subject || "(no subject)", messages });
+  return c.json({
+    threadId: id,
+    subject: rows[rows.length - 1].subject || "(no subject)",
+    archived: rows.some((r) => !!r.is_archived),
+    trashed: rows.some((r) => !!r.is_trashed),
+    messages,
+  });
 });
 
 // ---- flags (per email) ----------------------------------------------------

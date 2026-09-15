@@ -385,6 +385,25 @@ select {
   width: 18px;
   height: 18px;
 }
+.text-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: var(--radius-sm);
+  color: var(--text-dim);
+  font-weight: 500;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.text-btn:hover {
+  background: var(--hover);
+  color: var(--text);
+}
+.text-btn .icon {
+  width: 17px;
+  height: 17px;
+}
 .back-btn {
   display: none;
 }

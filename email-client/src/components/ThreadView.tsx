@@ -6,6 +6,7 @@ import {
   BackIcon,
   CodeIcon,
   ForwardIcon,
+  InboxIcon,
   MailIcon,
   PaperclipIcon,
   ReplyAllIcon,
@@ -87,6 +88,13 @@ export default function ThreadView({
     onBack();
   }
 
+  async function restore() {
+    if (!threadId) return;
+    await api.setThreadFlags(threadId, { isTrashed: false, isArchived: false });
+    onMutated();
+    onBack();
+  }
+
   if (!threadId) {
     return (
       <div className="read-pane">
@@ -119,12 +127,21 @@ export default function ThreadView({
           <button className={`icon-btn ${starred ? "on" : ""}`} onClick={toggleStar} title="Star">
             {starred ? <StarFillIcon /> : <StarIcon />}
           </button>
-          <button className="icon-btn" onClick={archive} title="Archive">
-            <ArchiveIcon />
-          </button>
-          <button className="icon-btn" onClick={trash} title="Trash">
-            <TrashIcon />
-          </button>
+          {detail.trashed || detail.archived ? (
+            <button className="text-btn" onClick={restore} title="Move to inbox">
+              <InboxIcon />
+              <span>Move to inbox</span>
+            </button>
+          ) : (
+            <button className="icon-btn" onClick={archive} title="Archive">
+              <ArchiveIcon />
+            </button>
+          )}
+          {!detail.trashed && (
+            <button className="icon-btn" onClick={trash} title="Trash">
+              <TrashIcon />
+            </button>
+          )}
         </div>
       </div>
 

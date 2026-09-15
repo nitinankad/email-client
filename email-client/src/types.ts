@@ -46,6 +46,8 @@ export interface Message {
 export interface ThreadDetail {
   threadId: string;
   subject: string;
+  archived: boolean;
+  trashed: boolean;
   messages: Message[];
 }
 
