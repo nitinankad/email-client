@@ -57,7 +57,28 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 }
 
 export const api = {
-  attachmentUrl: (id: string) => `${API_URL}/api/attachments/${id}`,
+  // Attachments are behind auth, so a plain link can't reach them. Fetch with
+  // the bearer token, then hand the browser a blob to download/open.
+  async openAttachment(id: string, filename: string) {
+    const headers = new Headers();
+    const token = getToken();
+    if (token) headers.set("Authorization", `Bearer ${token}`);
+    const res = await fetch(`${API_URL}/api/attachments/${id}`, { headers });
+    if (res.status === 401) {
+      setToken(null);
+      throw new ApiError(401, "unauthorized");
+    }
+    if (!res.ok) throw new ApiError(res.status, "could not download attachment");
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename || "attachment";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10_000);
+  },
 
   async login(password: string): Promise<string> {
     const { token } = await request<{ token: string }>("/api/login", {

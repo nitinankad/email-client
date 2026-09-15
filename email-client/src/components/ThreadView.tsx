@@ -6,6 +6,7 @@ import {
   BackIcon,
   ForwardIcon,
   MailIcon,
+  PaperclipIcon,
   ReplyAllIcon,
   ReplyIcon,
   StarFillIcon,
@@ -184,16 +185,16 @@ function MessageCard({
           {m.attachments.length > 0 && (
             <div className="attachments">
               {m.attachments.map((a) => (
-                <a
+                <button
                   key={a.id}
                   className="attach-chip"
-                  href={api.attachmentUrl(a.id)}
-                  target="_blank"
-                  rel="noreferrer"
+                  onClick={() => api.openAttachment(a.id, a.filename).catch(() => {})}
+                  title={`Download ${a.filename}`}
                 >
+                  <PaperclipIcon className="icon" style={{ width: 14, height: 14 }} />
                   <span>{a.filename}</span>
                   <span className="size">{formatBytes(a.size)}</span>
-                </a>
+                </button>
               ))}
             </div>
           )}
