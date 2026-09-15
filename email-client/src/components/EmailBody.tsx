@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Message } from "../types";
 
 // --- quoted-thread detection ------------------------------------------------
@@ -103,7 +103,8 @@ function wrapDoc(inner: string): string {
 
 export default function EmailBody({ message }: { message: Message }) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const [height, setHeight] = useState(120);
+  const observerRef = useRef<ResizeObserver | null>(null);
+  const [height, setHeight] = useState(60);
   const [expanded, setExpanded] = useState(false);
 
   const isHtml = !!message.html;
@@ -117,21 +118,35 @@ export default function EmailBody({ message }: { message: Message }) {
     return wrapDoc(expanded && split.quoted ? split.main + split.quoted : split.main);
   }, [isHtml, expanded, split]);
 
-  useEffect(() => {
-    if (!srcDoc) return;
-    const iframe = iframeRef.current;
-    if (!iframe) return;
-    const onLoad = () => {
-      try {
-        const doc = iframe.contentWindow?.document;
-        if (doc) setHeight(Math.min(doc.body.scrollHeight + 8, 4000));
-      } catch {
-        /* cross-origin: leave default */
-      }
-    };
-    iframe.addEventListener("load", onLoad);
-    return () => iframe.removeEventListener("load", onLoad);
-  }, [srcDoc]);
+  const measure = useCallback(() => {
+    try {
+      const doc = iframeRef.current?.contentWindow?.document;
+      if (!doc) return;
+      const h = Math.max(doc.documentElement.scrollHeight, doc.body.scrollHeight);
+      if (h > 0) setHeight(Math.min(h + 8, 4000));
+    } catch {
+      /* cross-origin: leave default */
+    }
+  }, []);
+
+  // Fires reliably on every srcDoc load (React attaches before load), then keeps
+  // the height in sync as images/fonts reflow the content.
+  const handleLoad = useCallback(() => {
+    measure();
+    requestAnimationFrame(measure);
+    try {
+      const doc = iframeRef.current?.contentWindow?.document;
+      if (!doc) return;
+      observerRef.current?.disconnect();
+      const ro = new ResizeObserver(() => measure());
+      ro.observe(doc.documentElement);
+      observerRef.current = ro;
+    } catch {
+      /* ignore */
+    }
+  }, [measure]);
+
+  useEffect(() => () => observerRef.current?.disconnect(), []);
 
   const toggle = split.quoted ? (
     <button
@@ -162,6 +177,7 @@ export default function EmailBody({ message }: { message: Message }) {
         title="email-content"
         sandbox="allow-same-origin allow-popups"
         srcDoc={srcDoc!}
+        onLoad={handleLoad}
         style={{ height, background: "transparent" }}
       />
       {toggle}

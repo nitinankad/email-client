@@ -24,6 +24,38 @@ function makeSnippet(text: string | null, html: string | null): string {
   return src.replace(/\s+/g, " ").trim().slice(0, 180);
 }
 
+function toBytes(content: unknown): Uint8Array {
+  if (content instanceof ArrayBuffer) return new Uint8Array(content);
+  if (typeof content === "string") return new TextEncoder().encode(content);
+  return new Uint8Array();
+}
+
+function base64(bytes: Uint8Array): string {
+  let bin = "";
+  for (const b of bytes) bin += String.fromCharCode(b);
+  return btoa(bin);
+}
+
+// Inline images referenced by `cid:` (pasted screenshots, signatures) don't
+// resolve in the sandboxed viewer, so embed them as data: URIs in the stored
+// HTML. Capped so we don't blow past D1's per-value size limit.
+const MAX_INLINE_BYTES = 900_000;
+function inlineCidImages(
+  html: string,
+  attachments: { content: unknown; mimeType?: string; contentId?: string }[],
+): string {
+  let out = html;
+  for (const att of attachments) {
+    if (!att.contentId || !(att.mimeType || "").startsWith("image/")) continue;
+    const bytes = toBytes(att.content);
+    if (bytes.byteLength === 0 || bytes.byteLength > MAX_INLINE_BYTES) continue;
+    const cid = att.contentId.replace(/^<|>$/g, "");
+    const dataUri = `data:${att.mimeType};base64,${base64(bytes)}`;
+    out = out.split(`cid:${cid}`).join(dataUri);
+  }
+  return out;
+}
+
 /** Parse a raw inbound message and persist it (plus attachments) to D1. */
 export async function handleInbound(message: ForwardableEmailMessage, env: Env): Promise<void> {
   // Forward a copy to any configured personal destinations. Do this first, and
@@ -65,7 +97,8 @@ export async function handleInbound(message: ForwardableEmailMessage, env: Env):
   const to = toAddresses(parsed.to);
   const cc = toAddresses(parsed.cc);
   const text = parsed.text ?? null;
-  const html = parsed.html ?? null;
+  const rawHtml = parsed.html ?? null;
+  const html = rawHtml ? inlineCidImages(rawHtml, parsed.attachments ?? []) : null;
   const createdAt = parsed.date ? Date.parse(parsed.date) || Date.now() : Date.now();
   // Raw headers, in received order, as [{key, value}].
   const headers = JSON.stringify(
@@ -100,15 +133,16 @@ export async function handleInbound(message: ForwardableEmailMessage, env: Env):
     .run();
 
   for (const att of parsed.attachments ?? []) {
-    const bytes =
-      att.content instanceof ArrayBuffer
-        ? new Uint8Array(att.content)
-        : typeof att.content === "string"
-          ? new TextEncoder().encode(att.content)
-          : new Uint8Array();
+    const bytes = toBytes(att.content);
     const size = bytes.byteLength;
-    const attId = crypto.randomUUID();
     const mimeType = att.mimeType || "application/octet-stream";
+
+    // Skip a separate chip for inline images we already embedded into the HTML.
+    const wasInlined =
+      !!rawHtml && !!att.contentId && mimeType.startsWith("image/") && size > 0 && size <= MAX_INLINE_BYTES;
+    if (wasInlined) continue;
+
+    const attId = crypto.randomUUID();
 
     // Store the bytes in R2 (no size cap); D1 keeps only metadata + the key.
     let r2Key: string | null = null;

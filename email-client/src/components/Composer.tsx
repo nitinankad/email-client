@@ -1,9 +1,38 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { api, ApiError } from "../api";
 import type { Address, Me } from "../types";
-import { CloseIcon, SendIcon } from "../icons";
-import { displayName, formatFull } from "../util";
+import { CloseIcon, PaperclipIcon, SendIcon } from "../icons";
+import { displayName, formatBytes, formatFull } from "../util";
 import type { ComposeIntent } from "./ThreadView";
+
+// Total attachment size cap (base64 inflates ~33%, and the request goes through
+// the Worker). Kept well under Resend's ~40 MB limit.
+const MAX_TOTAL_BYTES = 15 * 1024 * 1024;
+
+interface Attachment {
+  filename: string;
+  contentType: string;
+  size: number;
+  content: string; // base64 (no data: prefix)
+}
+
+function readFile(file: File): Promise<Attachment> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = String(reader.result);
+      const base64 = result.slice(result.indexOf(",") + 1);
+      resolve({
+        filename: file.name,
+        contentType: file.type || "application/octet-stream",
+        size: file.size,
+        content: base64,
+      });
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
 
 function parseAddresses(input: string): Address[] {
   return input
@@ -127,8 +156,30 @@ export default function Composer({
   const [subject, setSubject] = useState(initial.subject);
   const [body, setBody] = useState("");
   const [showQuote, setShowQuote] = useState(false);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [sending, setSending] = useState(false);
   const [msg, setMsg] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  async function addFiles(fileList: FileList | null) {
+    if (!fileList?.length) return;
+    setMsg("");
+    const incoming = await Promise.all(Array.from(fileList).map(readFile));
+    setAttachments((prev) => {
+      const next = [...prev, ...incoming];
+      const total = next.reduce((n, a) => n + a.size, 0);
+      if (total > MAX_TOTAL_BYTES) {
+        setMsg(`Attachments exceed ${Math.round(MAX_TOTAL_BYTES / 1024 / 1024)} MB total.`);
+        return prev;
+      }
+      return next;
+    });
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  function removeAttachment(idx: number) {
+    setAttachments((prev) => prev.filter((_, i) => i !== idx));
+  }
 
   async function send() {
     const toList = parseAddresses(to);
@@ -148,6 +199,7 @@ export default function Composer({
         text,
         html,
         replyToEmailId: initial.replyId,
+        attachments: attachments.map((a) => ({ filename: a.filename, contentType: a.contentType, content: a.content })),
       });
       onSent();
       onClose();
@@ -213,12 +265,38 @@ export default function Composer({
           </div>
         )}
 
+        {attachments.length > 0 && (
+          <div className="composer-attachments">
+            {attachments.map((a, i) => (
+              <span key={i} className="attach-chip static">
+                <PaperclipIcon className="icon" style={{ width: 14, height: 14 }} />
+                <span className="name">{a.filename}</span>
+                <span className="size">{formatBytes(a.size)}</span>
+                <button className="chip-remove" onClick={() => removeAttachment(i)} title="Remove">
+                  <CloseIcon style={{ width: 13, height: 13 }} />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          hidden
+          onChange={(e) => addFiles(e.target.files)}
+        />
+
         <div className="composer-foot">
           <button className="send" onClick={send} disabled={sending}>
             <SendIcon style={{ width: 16, height: 16 }} />
             {sending ? "Sending…" : "Send"}
           </button>
-          <span className={`foot-msg ${msg.startsWith("Failed") ? "error" : ""}`}>{msg}</span>
+          <button className="attach-btn" onClick={() => fileInputRef.current?.click()} title="Attach files">
+            <PaperclipIcon style={{ width: 17, height: 17 }} />
+          </button>
+          <span className={`foot-msg ${msg.startsWith("Failed") || msg.includes("exceed") ? "error" : ""}`}>{msg}</span>
         </div>
       </div>
     </div>

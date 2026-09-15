@@ -1,5 +1,11 @@
 import type { Address, Env } from "./types";
 
+export interface OutboundAttachment {
+  filename: string;
+  contentType?: string;
+  content: string; // base64
+}
+
 interface SendArgs {
   fromAddress: string;
   fromName?: string;
@@ -10,6 +16,7 @@ interface SendArgs {
   text?: string;
   inReplyTo?: string | null;
   references?: string | null;
+  attachments?: OutboundAttachment[];
 }
 
 function fmt(a: Address): string {
@@ -39,6 +46,13 @@ export async function sendViaResend(env: Env, args: SendArgs): Promise<SendResul
   if (args.html) body.html = args.html;
   if (args.text) body.text = args.text;
   if (Object.keys(headers).length) body.headers = headers;
+  if (args.attachments?.length) {
+    body.attachments = args.attachments.map((a) => ({
+      filename: a.filename,
+      content: a.content, // base64
+      content_type: a.contentType,
+    }));
+  }
 
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",

@@ -112,5 +112,6 @@ export const api = {
     text?: string;
     html?: string;
     replyToEmailId?: string;
+    attachments?: { filename: string; contentType?: string; content: string }[];
   }) => request<{ ok: true; threadId: string }>("/api/send", { method: "POST", body: JSON.stringify(payload) }),
 };

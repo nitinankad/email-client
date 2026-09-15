@@ -288,9 +288,12 @@ app.post("/api/send", async (c) => {
     text?: string;
     html?: string;
     replyToEmailId?: string;
+    attachments?: { filename: string; contentType?: string; content: string }[];
   }>();
 
   if (!body.to?.length || !body.subject) return c.json({ error: "to and subject required" }, 400);
+
+  const attachments = (body.attachments ?? []).filter((a) => a.content && a.filename);
 
   // Choose the sender address: must be one this mailbox owns. Falls back to MAIL_FROM.
   const owned = (c.env.OWNED_ADDRESSES || "").split(",").map((s) => s.trim()).filter(Boolean);
@@ -327,6 +330,7 @@ app.post("/api/send", async (c) => {
     html: body.html,
     inReplyTo,
     references,
+    attachments,
   });
 
   if (!threadId) {
@@ -383,6 +387,34 @@ app.post("/api/send", async (c) => {
       now,
     )
     .run();
+
+  // Persist sent attachments (R2 bytes + D1 metadata) so they show in the thread.
+  for (const att of attachments) {
+    let bytes: Uint8Array;
+    try {
+      const bin = atob(att.content);
+      bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    } catch {
+      continue; // skip malformed base64
+    }
+    const attId = crypto.randomUUID();
+    const r2Key = `attachments/${id}/${attId}`;
+    try {
+      await c.env.ATTACHMENTS.put(r2Key, bytes, {
+        httpMetadata: { contentType: att.contentType || "application/octet-stream" },
+      });
+    } catch (err) {
+      console.error(`R2 put failed for ${r2Key}:`, err);
+      continue;
+    }
+    await c.env.DB.prepare(
+      `INSERT INTO attachments (id, email_id, filename, mime_type, size, content, r2_key)
+       VALUES (?,?,?,?,?,NULL,?)`,
+    )
+      .bind(attId, id, att.filename, att.contentType || "application/octet-stream", bytes.byteLength, r2Key)
+      .run();
+  }
 
   return c.json({ ok: true, id, threadId, resendId: result.id });
 });
