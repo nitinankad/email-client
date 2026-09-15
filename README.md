@@ -1,6 +1,6 @@
 # email-client
 
-A good-looking, single-user email client for a custom domain, built on
+A single-user email client for a custom domain, built on
 **Cloudflare Email Routing + Workers + D1** for inbound/storage and
 **Resend** for outbound.
 
