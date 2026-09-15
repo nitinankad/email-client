@@ -1,0 +1,22 @@
+From: Ada Lovelace <ada@example.com>
+To: you@yourdomain.com
+Subject: Testing the inbound handler
+Message-ID: <test-0001@example.com>
+Date: Mon, 15 Sep 2026 10:00:00 +0000
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="b=_boundary1"
+
+--b=_boundary1
+Content-Type: text/plain; charset="utf-8"
+
+Hi there — this is a plain-text test of the inbound email pipeline.
+
+Cheers,
+Ada
+
+--b=_boundary1
+Content-Type: text/html; charset="utf-8"
+
+<html><body><p>Hi there — this is an <b>HTML</b> test of the inbound email pipeline.</p><p>Cheers,<br>Ada</p></body></html>
+
+--b=_boundary1--

@@ -1,0 +1,6 @@
+# Copy to `.dev.vars` for local `wrangler dev`. These are the secrets that
+# in production are set with `wrangler secret put`. Never commit `.dev.vars`.
+
+AUTH_PASSWORD="choose-a-login-password"
+SESSION_SECRET="a-long-random-string-used-to-sign-tokens"
+RESEND_API_KEY="re_xxxxxxxxxxxxxxxxxxxx"

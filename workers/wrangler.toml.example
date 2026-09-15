@@ -1,0 +1,43 @@
+# Copy this file to `wrangler.toml` and fill in your own values.
+#   cp wrangler.toml.example wrangler.toml
+# The real wrangler.toml is gitignored so your database id / domain / addresses
+# don't get committed.
+
+name = "email-client-api"
+main = "src/index.ts"
+compatibility_date = "2025-09-01"
+compatibility_flags = ["nodejs_compat"]
+
+# ---------------------------------------------------------------------------
+# D1 database binding.
+# Create it once with:   npx wrangler d1 create email_client
+# then paste the returned database_id below.
+#
+# IMPORTANT: leave `binding = "DB"` exactly as-is — the Worker code accesses the
+# database as `env.DB`. Renaming the binding breaks every query. Only
+# database_name / database_id are yours to change.
+# ---------------------------------------------------------------------------
+[[d1_databases]]
+binding = "DB"
+database_name = "email_client"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+
+# ---------------------------------------------------------------------------
+# Non-secret vars.
+# ---------------------------------------------------------------------------
+[vars]
+# The default address replies are sent from (must be on a Resend-verified domain).
+MAIL_FROM = "you@yourdomain.com"
+# Display name used on outbound mail.
+MAIL_FROM_NAME = "Your Name"
+# Comma-separated list of every address you may send *as*. This populates the
+# "From" dropdown in the composer. e.g. "you@yourdomain.com,team@yourdomain.com"
+OWNED_ADDRESSES = "you@yourdomain.com"
+
+# ---------------------------------------------------------------------------
+# Secrets — DO NOT put these here. Set them with `wrangler secret put`:
+#   npx wrangler secret put AUTH_PASSWORD    # password to log into the client
+#   npx wrangler secret put SESSION_SECRET   # random string for signing tokens
+#   npx wrangler secret put RESEND_API_KEY   # from resend.com
+# For local dev these go in `.dev.vars` instead (see .dev.vars.example).
+# ---------------------------------------------------------------------------

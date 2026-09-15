@@ -1,0 +1,21 @@
+From: Grace Hopper <grace@example.com>
+To: you@yourdomain.com
+Subject: Report attached
+Message-ID: <test-att-0001@example.com>
+Date: Mon, 15 Sep 2026 11:00:00 +0000
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="mix_boundary"
+
+--mix_boundary
+Content-Type: text/plain; charset="utf-8"
+
+Hi — please find the notes attached.
+
+--mix_boundary
+Content-Type: text/plain; name="notes.txt"
+Content-Disposition: attachment; filename="notes.txt"
+Content-Transfer-Encoding: base64
+
+SGVsbG8gZnJvbSB0aGUgYXR0YWNobWVudCEgVGhpcyBpcyBhIHNtYWxsIHRlc3QgZmlsZS4K
+
+--mix_boundary--
