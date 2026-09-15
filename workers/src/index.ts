@@ -32,7 +32,12 @@ app.post("/api/login", async (c) => {
 });
 
 app.get("/api/me", (c) =>
-  c.json({ from: c.env.MAIL_FROM, name: c.env.MAIL_FROM_NAME, owned: (c.env.OWNED_ADDRESSES || "").split(",").map((s) => s.trim()).filter(Boolean) }),
+  c.json({
+    from: c.env.MAIL_FROM,
+    name: c.env.MAIL_FROM_NAME,
+    owned: (c.env.OWNED_ADDRESSES || "").split(",").map((s) => s.trim()).filter(Boolean),
+    names: parseNames(c.env),
+  }),
 );
 
 // ---- helpers --------------------------------------------------------------
@@ -43,6 +48,14 @@ function parseAddrs(json: string | null): Address[] {
   } catch {
     return [];
   }
+}
+
+// Selectable display names for the composer (combined with an address in the
+// UI). Configured via SEND_NAMES, else just MAIL_FROM_NAME.
+function parseNames(env: Env): string[] {
+  const names = (env.SEND_NAMES || "").split(/[,;\n]+/).map((s) => s.trim()).filter(Boolean);
+  if (names.length) return names;
+  return env.MAIL_FROM_NAME ? [env.MAIL_FROM_NAME] : [];
 }
 
 function parseHeaders(json: string | null): { key: string; value: string }[] {
@@ -282,6 +295,7 @@ app.get("/api/attachments/:id", async (c) => {
 app.post("/api/send", async (c) => {
   const body = await c.req.json<{
     from?: string;
+    fromName?: string;
     to: Address[];
     cc?: Address[];
     subject: string;
@@ -301,7 +315,11 @@ app.post("/api/send", async (c) => {
     body.from && owned.some((o) => o.toLowerCase() === body.from!.toLowerCase())
       ? body.from
       : c.env.MAIL_FROM;
-  const fromName = fromAddress.toLowerCase() === c.env.MAIL_FROM.toLowerCase() ? c.env.MAIL_FROM_NAME : undefined;
+
+  // Resolve the display name: must be one of the configured names. Falls back
+  // to the first configured name (or none).
+  const names = parseNames(c.env);
+  const fromName = body.fromName && names.includes(body.fromName) ? body.fromName : names[0] || undefined;
 
   let inReplyTo: string | null = null;
   let references: string | null = null;

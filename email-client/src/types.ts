@@ -55,6 +55,7 @@ export interface Me {
   from: string;
   name: string;
   owned: string[];
+  names: string[];
 }
 
 export type Folder = "inbox" | "starred" | "sent" | "archived" | "trash" | "all";

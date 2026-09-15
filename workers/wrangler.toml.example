@@ -39,9 +39,15 @@ bucket_name = "email-attachments"
 MAIL_FROM = "you@yourdomain.com"
 # Display name used on outbound mail.
 MAIL_FROM_NAME = "Your Name"
-# Comma-separated list of every address you may send *as*. This populates the
-# "From" dropdown in the composer. e.g. "you@yourdomain.com,team@yourdomain.com"
+# Comma-separated list of every address you may send *as* (the security
+# allowlist — an outbound send must use one of these). e.g.
+# "you@yourdomain.com,team@yourdomain.com"
 OWNED_ADDRESSES = "you@yourdomain.com"
+
+# Optional: selectable display names for the composer, separated by commas. The
+# UI lets you pick any name and any address independently. Falls back to
+# MAIL_FROM_NAME if omitted. e.g. "You, You from Company"
+SEND_NAMES = ""
 
 # Optional: also forward every inbound message to these personal addresses (in
 # addition to storing it in D1). Comma-separated. Each address MUST be added and

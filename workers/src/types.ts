@@ -6,6 +6,9 @@ export interface Env {
   MAIL_FROM: string;
   MAIL_FROM_NAME: string;
   OWNED_ADDRESSES: string;
+  // Optional: selectable display names for the composer, separated by commas /
+  // semicolons / newlines. Falls back to MAIL_FROM_NAME.
+  SEND_NAMES?: string;
   // Optional: comma-separated destination addresses to also forward inbound
   // mail to. Each must be a *verified* destination in Cloudflare Email Routing.
   FORWARD_TO?: string;

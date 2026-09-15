@@ -58,7 +58,10 @@ Now edit **`workers/wrangler.toml`**:
   Resend-verified domain)
 - `[vars]` → `MAIL_FROM_NAME` — your display name
 - `[vars]` → `OWNED_ADDRESSES` — comma-separated list of every address you may
-  send *as* (this powers the "From" dropdown in the composer)
+  send *as* (the security allowlist for outbound)
+- `[vars]` → `SEND_NAMES` *(optional)* — selectable display names, comma-separated
+  (e.g. `Nitin, Nitin from Kinvo, Kinvo`). The composer lets you pick a name and
+  an address independently. Falls back to `MAIL_FROM_NAME` if unset.
 
 Set the three secrets (stored encrypted by Cloudflare, never in the repo):
 

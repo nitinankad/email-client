@@ -106,6 +106,7 @@ export const api = {
 
   send: (payload: {
     from?: string;
+    fromName?: string;
     to: Address[];
     cc?: Address[];
     subject: string;

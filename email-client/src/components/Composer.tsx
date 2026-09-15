@@ -130,12 +130,18 @@ export default function Composer({
   onClose: () => void;
   onSent: () => void;
 }) {
-  const fromOptions = useMemo(() => {
-    const set = new Set<string>();
-    if (me?.from) set.add(me.from);
-    for (const o of me?.owned ?? []) set.add(o);
-    return [...set];
-  }, [me]);
+  const names: string[] = useMemo(() => me?.names?.length ? me.names : me?.name ? [me.name] : [], [me]);
+  const addresses: string[] = useMemo(() => me?.owned?.length ? me.owned : me?.from ? [me.from] : [], [me]);
+
+  // Default address: the one the original was sent to (reply), else the first.
+  const defaultAddrIdx = useMemo(() => {
+    const target = intent?.message.to[0]?.address?.toLowerCase();
+    if (target) {
+      const i = addresses.findIndex((a) => a.toLowerCase() === target);
+      if (i >= 0) return i;
+    }
+    return 0;
+  }, [addresses, intent]);
 
   const initial = useMemo(() => {
     if (!intent) return { to: "", cc: "", subject: "", replyId: undefined as string | undefined };
@@ -149,7 +155,8 @@ export default function Composer({
     return { to, cc, subject: `Re: ${subjBase}`, replyId: m.id };
   }, [intent]);
 
-  const [from, setFrom] = useState(intent?.message.to[0]?.address && fromOptions.includes(intent.message.to[0].address) ? intent.message.to[0].address : me?.from || fromOptions[0] || "");
+  const [nameIdx, setNameIdx] = useState(0);
+  const [addrIdx, setAddrIdx] = useState(defaultAddrIdx);
   const [to, setTo] = useState(initial.to);
   const [cc, setCc] = useState(initial.cc);
   const [showCc, setShowCc] = useState(!!initial.cc);
@@ -192,7 +199,8 @@ export default function Composer({
     try {
       const { text, html } = buildBodies(intent, body);
       await api.send({
-        from,
+        from: addresses[addrIdx],
+        fromName: names[nameIdx],
         to: toList,
         cc: showCc ? parseAddresses(cc) : undefined,
         subject: subject || "(no subject)",
@@ -221,12 +229,25 @@ export default function Composer({
           </button>
         </div>
 
+        {names.length > 1 && (
+          <div className="composer-row">
+            <label>Name</label>
+            <select value={nameIdx} onChange={(e) => setNameIdx(Number(e.target.value))}>
+              {names.map((n, i) => (
+                <option key={`${n}|${i}`} value={i}>
+                  {n}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <div className="composer-row">
           <label>From</label>
-          <select value={from} onChange={(e) => setFrom(e.target.value)}>
-            {fromOptions.map((o) => (
-              <option key={o} value={o}>
-                {me?.name && o === me.from ? `${me.name} <${o}>` : o}
+          <select value={addrIdx} onChange={(e) => setAddrIdx(Number(e.target.value))}>
+            {addresses.map((a, i) => (
+              <option key={`${a}|${i}`} value={i}>
+                {names[nameIdx] ? `${names[nameIdx]} <${a}>` : a}
               </option>
             ))}
           </select>
