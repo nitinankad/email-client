@@ -41,6 +41,9 @@ cp wrangler.toml.example wrangler.toml
 # Create the D1 database, then paste the returned database_id into wrangler.toml
 npx wrangler d1 create email_client
 
+# Create the R2 bucket that holds attachment bytes
+npx wrangler r2 bucket create email-attachments
+
 # Create the tables (local + remote)
 npm run db:init:local
 npm run db:init:remote
@@ -138,9 +141,16 @@ remote (and local) database so new columns exist:
 
 ```bash
 cd workers
+# each migration, against remote and local
 npx wrangler d1 execute email_client --remote --file=./migrations/0001_add_headers.sql
 npx wrangler d1 execute email_client --local  --file=./migrations/0001_add_headers.sql
+npx wrangler d1 execute email_client --remote --file=./migrations/0002_add_r2_key.sql
+npx wrangler d1 execute email_client --local  --file=./migrations/0002_add_r2_key.sql
 ```
+
+(The `0002` migration also needs the R2 bucket to exist —
+`npx wrangler r2 bucket create email-attachments` — and the `[[r2_buckets]]`
+binding in `wrangler.toml`.)
 
 Then wire up inbound delivery in the Cloudflare dashboard:
 **Email → Email Routing → Routes**. Add a rule (a specific address or the
@@ -197,5 +207,6 @@ output dir `dist`, and set the `VITE_API_URL` environment variable there.
 - **Replies are sent as multipart text + HTML**, with the original wrapped in a
   `gmail_quote` blockquote so Gmail/Apple Mail/Outlook collapse the quoted
   thread behind a "show trimmed content" toggle.
-- **Attachments** up to ~700 KB are stored inline in D1 and downloadable; larger
-  ones are kept as metadata only (swap in R2 if you need big files).
+- **Attachments** are stored in an **R2 bucket** (bytes) with metadata in D1, so
+  there's no practical size cap. The download endpoint serves from R2, falling
+  back to any legacy base64-in-D1 attachments from older versions.

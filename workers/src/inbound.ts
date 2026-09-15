@@ -24,8 +24,6 @@ function makeSnippet(text: string | null, html: string | null): string {
   return src.replace(/\s+/g, " ").trim().slice(0, 180);
 }
 
-const MAX_ATTACHMENT_BYTES = 700_000; // keep D1 rows sane; larger ones stored as metadata only
-
 /** Parse a raw inbound message and persist it (plus attachments) to D1. */
 export async function handleInbound(message: ForwardableEmailMessage, env: Env): Promise<void> {
   // Forward a copy to any configured personal destinations. Do this first, and
@@ -109,17 +107,28 @@ export async function handleInbound(message: ForwardableEmailMessage, env: Env):
           ? new TextEncoder().encode(att.content)
           : new Uint8Array();
     const size = bytes.byteLength;
-    let b64: string | null = null;
-    if (size > 0 && size <= MAX_ATTACHMENT_BYTES) {
-      let bin = "";
-      for (const byte of bytes) bin += String.fromCharCode(byte);
-      b64 = btoa(bin);
+    const attId = crypto.randomUUID();
+    const mimeType = att.mimeType || "application/octet-stream";
+
+    // Store the bytes in R2 (no size cap); D1 keeps only metadata + the key.
+    let r2Key: string | null = null;
+    if (size > 0) {
+      r2Key = `attachments/${id}/${attId}`;
+      try {
+        await env.ATTACHMENTS.put(r2Key, bytes, {
+          httpMetadata: { contentType: mimeType },
+        });
+      } catch (err) {
+        console.error(`R2 put failed for ${r2Key}:`, err);
+        r2Key = null;
+      }
     }
+
     await env.DB.prepare(
-      `INSERT INTO attachments (id, email_id, filename, mime_type, size, content)
-       VALUES (?,?,?,?,?,?)`,
+      `INSERT INTO attachments (id, email_id, filename, mime_type, size, content, r2_key)
+       VALUES (?,?,?,?,?,NULL,?)`,
     )
-      .bind(crypto.randomUUID(), id, att.filename || "attachment", att.mimeType || "application/octet-stream", size, b64)
+      .bind(attId, id, att.filename || "attachment", mimeType, size, r2Key)
       .run();
   }
 }

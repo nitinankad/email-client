@@ -23,6 +23,15 @@ database_name = "email_client"
 database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
 
 # ---------------------------------------------------------------------------
+# R2 bucket for attachment bytes (metadata stays in D1). Create it once with:
+#   npx wrangler r2 bucket create email-attachments
+# Leave `binding = "ATTACHMENTS"` unchanged — the Worker reads env.ATTACHMENTS.
+# ---------------------------------------------------------------------------
+[[r2_buckets]]
+binding = "ATTACHMENTS"
+bucket_name = "email-attachments"
+
+# ---------------------------------------------------------------------------
 # Non-secret vars.
 # ---------------------------------------------------------------------------
 [vars]

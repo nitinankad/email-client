@@ -1,5 +1,7 @@
 export interface Env {
   DB: D1Database;
+  // R2 bucket for attachment bytes (metadata stays in D1).
+  ATTACHMENTS: R2Bucket;
   // vars
   MAIL_FROM: string;
   MAIL_FROM_NAME: string;

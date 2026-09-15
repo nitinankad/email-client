@@ -241,20 +241,41 @@ app.post("/api/threads/:id/flags", (c) => applyFlags(c, "thread_id", c.req.param
 // ---- attachment download --------------------------------------------------
 app.get("/api/attachments/:id", async (c) => {
   const row = await c.env.DB.prepare(
-    "SELECT filename, mime_type, content FROM attachments WHERE id = ?",
+    "SELECT filename, mime_type, content, r2_key FROM attachments WHERE id = ?",
   )
     .bind(c.req.param("id"))
-    .first<{ filename: string; mime_type: string; content: string | null }>();
-  if (!row || !row.content) return c.json({ error: "not found or too large to store" }, 404);
-  const bin = atob(row.content);
-  const bytes = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-  return new Response(bytes, {
-    headers: {
-      "Content-Type": row.mime_type || "application/octet-stream",
-      "Content-Disposition": `attachment; filename="${row.filename || "attachment"}"`,
-    },
-  });
+    .first<{ filename: string; mime_type: string; content: string | null; r2_key: string | null }>();
+  if (!row) return c.json({ error: "not found" }, 404);
+
+  const disposition = `attachment; filename="${(row.filename || "attachment").replace(/"/g, "")}"`;
+
+  // Preferred path: bytes live in R2.
+  if (row.r2_key) {
+    const obj = await c.env.ATTACHMENTS.get(row.r2_key);
+    if (!obj) return c.json({ error: "not found in storage" }, 404);
+    return new Response(obj.body, {
+      headers: {
+        "Content-Type": obj.httpMetadata?.contentType || row.mime_type || "application/octet-stream",
+        "Content-Disposition": disposition,
+        "Content-Length": String(obj.size),
+      },
+    });
+  }
+
+  // Legacy path: small attachments stored inline as base64 in D1.
+  if (row.content) {
+    const bin = atob(row.content);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new Response(bytes, {
+      headers: {
+        "Content-Type": row.mime_type || "application/octet-stream",
+        "Content-Disposition": disposition,
+      },
+    });
+  }
+
+  return c.json({ error: "attachment has no stored content" }, 404);
 });
 
 // ---- send / reply ---------------------------------------------------------

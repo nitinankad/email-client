@@ -36,7 +36,8 @@ CREATE TABLE IF NOT EXISTS attachments (
   filename    TEXT,
   mime_type   TEXT,
   size        INTEGER NOT NULL DEFAULT 0,
-  content     TEXT,                       -- base64 (small attachments only)
+  content     TEXT,                       -- legacy: base64 for old inline attachments
+  r2_key      TEXT,                       -- object key in the R2 bucket (new attachments)
   FOREIGN KEY (email_id) REFERENCES emails (id) ON DELETE CASCADE
 );
 
