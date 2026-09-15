@@ -4,6 +4,9 @@ export interface Env {
   MAIL_FROM: string;
   MAIL_FROM_NAME: string;
   OWNED_ADDRESSES: string;
+  // Optional: comma-separated destination addresses to also forward inbound
+  // mail to. Each must be a *verified* destination in Cloudflare Email Routing.
+  FORWARD_TO?: string;
   // secrets
   AUTH_PASSWORD: string;
   SESSION_SECRET: string;

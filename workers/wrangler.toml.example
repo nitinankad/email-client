@@ -34,6 +34,13 @@ MAIL_FROM_NAME = "Your Name"
 # "From" dropdown in the composer. e.g. "you@yourdomain.com,team@yourdomain.com"
 OWNED_ADDRESSES = "you@yourdomain.com"
 
+# Optional: also forward every inbound message to these personal addresses (in
+# addition to storing it in D1). Comma-separated. Each address MUST be added and
+# verified as a Destination address in Cloudflare Email Routing, or forwarding
+# silently fails. Leave empty / delete the line to disable forwarding.
+# e.g. "me@gmail.com"
+FORWARD_TO = ""
+
 # ---------------------------------------------------------------------------
 # Secrets — DO NOT put these here. Set them with `wrangler secret put`:
 #   npx wrangler secret put AUTH_PASSWORD    # password to log into the client

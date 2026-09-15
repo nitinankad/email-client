@@ -9,6 +9,7 @@ interface ForwardableEmailMessage {
   readonly raw: ReadableStream<Uint8Array>;
   readonly rawSize: number;
   setReject(reason: string): void;
+  forward(rcptTo: string, headers?: Headers): Promise<void>;
 }
 
 function toAddresses(list: { name?: string; address?: string }[] | undefined): Address[] {
@@ -27,6 +28,19 @@ const MAX_ATTACHMENT_BYTES = 700_000; // keep D1 rows sane; larger ones stored a
 
 /** Parse a raw inbound message and persist it (plus attachments) to D1. */
 export async function handleInbound(message: ForwardableEmailMessage, env: Env): Promise<void> {
+  // Forward a copy to any configured personal destinations. Do this first, and
+  // isolate failures, so a bad/unverified address or a storage error never
+  // prevents the other from happening. Each destination must be verified in
+  // Cloudflare Email Routing, or forward() rejects.
+  const forwardTo = (env.FORWARD_TO || "").split(",").map((s) => s.trim()).filter(Boolean);
+  for (const dest of forwardTo) {
+    try {
+      await message.forward(dest);
+    } catch (err) {
+      console.error(`forward to ${dest} failed:`, err);
+    }
+  }
+
   const parsed = await PostalMime.parse(message.raw);
 
   const id = crypto.randomUUID();

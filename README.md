@@ -186,6 +186,12 @@ output dir `dist`, and set the `VITE_API_URL` environment variable there.
   normalized subject.
 - **HTML email** is rendered inside a sandboxed `<iframe>` (scripts disabled), so
   hostile markup in a message can't touch the app.
+- **Forwarding** — set `FORWARD_TO` in `wrangler.toml` (comma-separated) to also
+  forward every inbound message to your personal address(es), on top of storing
+  it. Each destination must be added and **verified** under Cloudflare
+  **Email Routing → Destination addresses** first, or `message.forward()` fails.
+  This is how you keep receiving mail in your normal inbox after pointing the
+  routing rule at the Worker (the Worker rule replaces the old forwarding rule).
 - **Raw headers** are stored per message and viewable via the `</>` toggle in
   each message's header row.
 - **Replies are sent as multipart text + HTML**, with the original wrapped in a
