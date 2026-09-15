@@ -55,14 +55,18 @@ export async function handleInbound(message: ForwardableEmailMessage, env: Env):
   const text = parsed.text ?? null;
   const html = parsed.html ?? null;
   const createdAt = parsed.date ? Date.parse(parsed.date) || Date.now() : Date.now();
+  // Raw headers, in received order, as [{key, value}].
+  const headers = JSON.stringify(
+    (parsed.headers ?? []).map((h) => ({ key: h.key, value: h.value })),
+  );
 
   await env.DB.prepare(
     `INSERT INTO emails
       (id, message_id, thread_id, in_reply_to, refs, direction,
        from_name, from_address, to_addresses, cc_addresses,
-       subject, snippet, text_body, html_body,
+       subject, snippet, text_body, html_body, headers,
        is_read, is_starred, is_archived, is_trashed, created_at)
-     VALUES (?,?,?,?,?, 'inbound', ?,?,?,?, ?,?,?,?, 0,0,0,0, ?)`,
+     VALUES (?,?,?,?,?, 'inbound', ?,?,?,?, ?,?,?,?,?, 0,0,0,0, ?)`,
   )
     .bind(
       id,
@@ -78,6 +82,7 @@ export async function handleInbound(message: ForwardableEmailMessage, env: Env):
       makeSnippet(text, html),
       text,
       html,
+      headers,
       createdAt,
     )
     .run();

@@ -454,6 +454,11 @@ select {
   font-size: 12px;
   flex-shrink: 0;
 }
+.msg-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
 .msg-actions {
   display: flex;
   border: 1px solid var(--border);
@@ -469,9 +474,31 @@ select {
 .icon-btn.sm:last-child {
   border-right: none;
 }
+.icon-btn.sm.ghost {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.icon-btn.on-accent {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
 .icon-btn.sm .icon {
   width: 16px;
   height: 16px;
+}
+.raw-headers {
+  margin: 0;
+  padding: 14px 18px;
+  border-top: 1px solid var(--border);
+  background: var(--panel-2);
+  color: var(--text-dim);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 320px;
+  overflow-y: auto;
 }
 .tag {
   font-size: 11px;
@@ -740,6 +767,24 @@ select {
   padding: 16px 18px;
   resize: none;
   line-height: 1.6;
+}
+.quote-preview {
+  padding: 8px 18px 4px;
+  border-top: 1px solid var(--border-soft);
+}
+.quote-body {
+  margin: 8px 0 4px;
+  padding: 10px 12px;
+  border-left: 2px solid var(--border);
+  background: var(--panel-2);
+  color: var(--text-faint);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 180px;
+  overflow-y: auto;
 }
 .composer-foot {
   display: flex;

@@ -101,6 +101,12 @@ export const PaperclipIcon = (p: P) => (
     <path d="M21.44 11.05 12.25 20.24a5 5 0 0 1-7.07-7.07l9.19-9.19a3 3 0 0 1 4.24 4.24l-9.2 9.19a1 1 0 0 1-1.41-1.41l8.49-8.49" />
   </svg>
 );
+export const CodeIcon = (p: P) => (
+  <svg {...base(p)}>
+    <path d="m8 6-6 6 6 6" />
+    <path d="m16 6 6 6-6 6" />
+  </svg>
+);
 export const MailIcon = (p: P) => (
   <svg {...base(p)}>
     <rect x="2" y="4" width="20" height="16" rx="2" />

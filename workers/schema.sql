@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS emails (
   snippet      TEXT,                      -- short plaintext preview
   text_body    TEXT,
   html_body    TEXT,
+  headers      TEXT,                      -- JSON array of {key,value} raw headers
   is_read      INTEGER NOT NULL DEFAULT 0,
   is_starred   INTEGER NOT NULL DEFAULT 0,
   is_archived  INTEGER NOT NULL DEFAULT 0,

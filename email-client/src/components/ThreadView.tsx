@@ -4,6 +4,7 @@ import type { Message, ThreadDetail } from "../types";
 import {
   ArchiveIcon,
   BackIcon,
+  CodeIcon,
   ForwardIcon,
   MailIcon,
   PaperclipIcon,
@@ -146,6 +147,7 @@ function MessageCard({
   onCompose: (intent: ComposeIntent) => void;
 }) {
   const [open, setOpen] = useState(true);
+  const [showHeaders, setShowHeaders] = useState(false);
   const act = (mode: ComposeIntent["mode"]) => (e: React.MouseEvent) => {
     e.stopPropagation();
     onCompose({ mode, message: m, subject });
@@ -164,19 +166,35 @@ function MessageCard({
         </div>
         <div className="msg-head-right">
           <div className="msg-date">{formatFull(m.createdAt)}</div>
-          <div className="msg-actions" onClick={(e) => e.stopPropagation()}>
-            <button className="icon-btn sm" onClick={act("reply")} title="Reply">
-              <ReplyIcon />
+          <div className="msg-actions-row" onClick={(e) => e.stopPropagation()}>
+            <button
+              className={`icon-btn sm ghost ${showHeaders ? "on-accent" : ""}`}
+              onClick={() => setShowHeaders((s) => !s)}
+              title="View raw headers"
+            >
+              <CodeIcon />
             </button>
-            <button className="icon-btn sm" onClick={act("replyAll")} title="Reply all">
-              <ReplyAllIcon />
-            </button>
-            <button className="icon-btn sm" onClick={act("forward")} title="Forward">
-              <ForwardIcon />
-            </button>
+            <div className="msg-actions">
+              <button className="icon-btn sm" onClick={act("reply")} title="Reply">
+                <ReplyIcon />
+              </button>
+              <button className="icon-btn sm" onClick={act("replyAll")} title="Reply all">
+                <ReplyAllIcon />
+              </button>
+              <button className="icon-btn sm" onClick={act("forward")} title="Forward">
+                <ForwardIcon />
+              </button>
+            </div>
           </div>
         </div>
       </div>
+      {showHeaders && (
+        <pre className="raw-headers">
+          {m.headers.length
+            ? m.headers.map((h) => `${h.key}: ${h.value}`).join("\n")
+            : "No headers available for this message."}
+        </pre>
+      )}
       {open && (
         <>
           <div className="msg-body">

@@ -36,6 +36,7 @@ export interface Message {
   subject: string | null;
   text: string | null;
   html: string | null;
+  headers: { key: string; value: string }[];
   isRead: boolean;
   isStarred: boolean;
   createdAt: number;

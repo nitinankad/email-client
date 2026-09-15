@@ -30,6 +30,7 @@ export interface EmailRow {
   snippet: string | null;
   text_body: string | null;
   html_body: string | null;
+  headers: string | null; // JSON array of {key,value}
   is_read: number;
   is_starred: number;
   is_archived: number;

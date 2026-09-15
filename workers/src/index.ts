@@ -45,6 +45,15 @@ function parseAddrs(json: string | null): Address[] {
   }
 }
 
+function parseHeaders(json: string | null): { key: string; value: string }[] {
+  if (!json) return [];
+  try {
+    return JSON.parse(json) as { key: string; value: string }[];
+  } catch {
+    return [];
+  }
+}
+
 function threadSummaryHaving(folder: string): string {
   switch (folder) {
     case "trash":
@@ -184,6 +193,7 @@ app.get("/api/threads/:id", async (c) => {
     subject: r.subject,
     text: r.text_body,
     html: r.html_body,
+    headers: parseHeaders(r.headers),
     isRead: !!r.is_read,
     isStarred: !!r.is_starred,
     createdAt: r.created_at,
@@ -308,13 +318,25 @@ app.post("/api/send", async (c) => {
     .trim()
     .slice(0, 180);
 
+  // Synthesize the headers we set, so "view raw headers" works for sent mail too.
+  const sentHeaders: { key: string; value: string }[] = [
+    { key: "Message-ID", value: result.messageId },
+    { key: "Date", value: new Date(now).toUTCString() },
+    { key: "From", value: fromName ? `${fromName} <${fromAddress}>` : fromAddress },
+    { key: "To", value: body.to.map((a) => (a.name ? `${a.name} <${a.address}>` : a.address)).join(", ") },
+    ...(body.cc?.length ? [{ key: "Cc", value: body.cc.map((a) => a.address).join(", ") }] : []),
+    { key: "Subject", value: body.subject },
+    ...(inReplyTo ? [{ key: "In-Reply-To", value: inReplyTo }] : []),
+    ...(references ? [{ key: "References", value: references }] : []),
+  ];
+
   await c.env.DB.prepare(
     `INSERT INTO emails
       (id, message_id, thread_id, in_reply_to, refs, direction,
        from_name, from_address, to_addresses, cc_addresses,
-       subject, snippet, text_body, html_body,
+       subject, snippet, text_body, html_body, headers,
        is_read, is_starred, is_archived, is_trashed, created_at)
-     VALUES (?,?,?,?,?, 'outbound', ?,?,?,?, ?,?,?,?, 1,0,0,0, ?)`,
+     VALUES (?,?,?,?,?, 'outbound', ?,?,?,?, ?,?,?,?,?, 1,0,0,0, ?)`,
   )
     .bind(
       id,
@@ -330,6 +352,7 @@ app.post("/api/send", async (c) => {
       snippet,
       body.text || null,
       body.html || null,
+      JSON.stringify(sentHeaders),
       now,
     )
     .run();

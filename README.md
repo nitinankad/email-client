@@ -133,6 +133,15 @@ cd workers
 npm run deploy          # note the printed *.workers.dev URL
 ```
 
+**Already deployed from an earlier version?** Run pending migrations against the
+remote (and local) database so new columns exist:
+
+```bash
+cd workers
+npx wrangler d1 execute email_client --remote --file=./migrations/0001_add_headers.sql
+npx wrangler d1 execute email_client --local  --file=./migrations/0001_add_headers.sql
+```
+
 Then wire up inbound delivery in the Cloudflare dashboard:
 **Email → Email Routing → Routes**. Add a rule (a specific address or the
 catch-all) with the action **"Send to a Worker"** and pick `email-client-api`.
@@ -177,5 +186,10 @@ output dir `dist`, and set the `VITE_API_URL` environment variable there.
   normalized subject.
 - **HTML email** is rendered inside a sandboxed `<iframe>` (scripts disabled), so
   hostile markup in a message can't touch the app.
+- **Raw headers** are stored per message and viewable via the `</>` toggle in
+  each message's header row.
+- **Replies are sent as multipart text + HTML**, with the original wrapped in a
+  `gmail_quote` blockquote so Gmail/Apple Mail/Outlook collapse the quoted
+  thread behind a "show trimmed content" toggle.
 - **Attachments** up to ~700 KB are stored inline in D1 and downloadable; larger
   ones are kept as metadata only (swap in R2 if you need big files).
