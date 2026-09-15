@@ -98,6 +98,13 @@ export const api = {
 
   thread: (id: string) => request<ThreadDetail>(`/api/threads/${encodeURIComponent(id)}`),
 
+  importEml: (raw: string) =>
+    request<{ ok: true; threadId: string }>("/api/import", {
+      method: "POST",
+      headers: { "Content-Type": "message/rfc822" },
+      body: raw,
+    }),
+
   setEmailFlags: (id: string, flags: Record<string, boolean>) =>
     request(`/api/emails/${encodeURIComponent(id)}/flags`, { method: "POST", body: JSON.stringify(flags) }),
 

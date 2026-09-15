@@ -71,7 +71,20 @@ export async function handleInbound(message: ForwardableEmailMessage, env: Env):
     }
   }
 
-  const parsed = await PostalMime.parse(message.raw);
+  await storeRawEmail(env, message.raw, { fallbackFrom: message.from, fallbackTo: message.to });
+}
+
+/**
+ * Parse a raw RFC-822 message (string, bytes, or stream) and persist it to D1.
+ * Shared by the Email Routing handler and the manual import endpoint.
+ * Returns the new email id and its thread id.
+ */
+export async function storeRawEmail(
+  env: Env,
+  raw: string | ArrayBuffer | Uint8Array | ReadableStream<Uint8Array>,
+  fallback: { fallbackFrom?: string; fallbackTo?: string } = {},
+): Promise<{ id: string; threadId: string }> {
+  const parsed = await PostalMime.parse(raw as ArrayBuffer);
 
   const id = crypto.randomUUID();
   const messageId = parsed.messageId || `<${id}@inbound.local>`;
@@ -93,7 +106,7 @@ export async function handleInbound(message: ForwardableEmailMessage, env: Env):
   const from: Address =
     parsed.from && "address" in parsed.from && parsed.from.address
       ? { name: parsed.from.name || undefined, address: parsed.from.address }
-      : { address: message.from };
+      : { address: fallback.fallbackFrom || "unknown@unknown" };
   const to = toAddresses(parsed.to);
   const cc = toAddresses(parsed.cc);
   const text = parsed.text ?? null;
@@ -120,8 +133,8 @@ export async function handleInbound(message: ForwardableEmailMessage, env: Env):
       inReplyTo,
       references,
       from.name || null,
-      from.address || message.from,
-      JSON.stringify(to.length ? to : [{ address: message.to }]),
+      from.address,
+      JSON.stringify(to.length ? to : [{ address: fallback.fallbackTo || "unknown@unknown" }]),
       cc.length ? JSON.stringify(cc) : null,
       parsed.subject || null,
       makeSnippet(text, html),
@@ -165,4 +178,6 @@ export async function handleInbound(message: ForwardableEmailMessage, env: Env):
       .bind(attId, id, att.filename || "attachment", mimeType, size, r2Key)
       .run();
   }
+
+  return { id, threadId };
 }

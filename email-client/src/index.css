@@ -132,6 +132,27 @@ select {
   filter: brightness(1.08);
 }
 
+.import-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 14px;
+  margin-bottom: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-dim);
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.import-btn:hover {
+  background: var(--hover);
+  color: var(--text);
+  border-color: #2c2c33;
+}
+
 .nav-item {
   display: flex;
   align-items: center;

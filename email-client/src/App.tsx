@@ -20,6 +20,7 @@ export default function App() {
 
   const [composerOpen, setComposerOpen] = useState(false);
   const [intent, setIntent] = useState<ComposeIntent | null>(null);
+  const [importStatus, setImportStatus] = useState("");
 
   const loadThreads = useCallback(
     async (f: Folder, q: string) => {
@@ -81,6 +82,24 @@ export default function App() {
     setComposerOpen(true);
   }
 
+  async function handleImport(files: FileList) {
+    setImportStatus("Importing…");
+    let ok = 0;
+    let fail = 0;
+    for (const file of Array.from(files)) {
+      try {
+        const raw = await file.text();
+        await api.importEml(raw);
+        ok++;
+      } catch {
+        fail++;
+      }
+    }
+    refreshAll();
+    setImportStatus(`Imported ${ok}${fail ? `, ${fail} failed` : ""}`);
+    setTimeout(() => setImportStatus(""), 4000);
+  }
+
   if (!authed) {
     return <Login onLogin={() => setAuthed(true)} />;
   }
@@ -95,6 +114,8 @@ export default function App() {
           setQuery("");
         }}
         onCompose={() => openCompose(null)}
+        onImport={handleImport}
+        importStatus={importStatus}
         inboxUnread={inboxUnread}
         me={me}
         onLogout={logout}

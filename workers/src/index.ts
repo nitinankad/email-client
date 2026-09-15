@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import type { Address, EmailRow, Env } from "./types";
 import { checkPassword, issueToken, verifyToken } from "./auth";
-import { handleInbound } from "./inbound";
+import { handleInbound, storeRawEmail } from "./inbound";
 import { sendViaResend } from "./resend";
 import { resolveThreadId } from "./threading";
 
@@ -441,6 +441,21 @@ app.post("/api/send", async (c) => {
   }
 
   return c.json({ ok: true, id, threadId, resendId: result.id });
+});
+
+// ---- manual import of a raw .eml -----------------------------------------
+// POST the raw RFC-822 message as the request body (Content-Type text/plain or
+// message/rfc822). Auth-protected like the rest of /api. Handy for importing an
+// email that never went through the Worker.
+app.post("/api/import", async (c) => {
+  const raw = await c.req.text();
+  if (!raw.trim()) return c.json({ error: "empty body" }, 400);
+  try {
+    const { id, threadId } = await storeRawEmail(c.env, raw);
+    return c.json({ ok: true, id, threadId });
+  } catch (err) {
+    return c.json({ error: err instanceof Error ? err.message : "import failed" }, 400);
+  }
 });
 
 app.get("/", (c) => c.text("email-client API"));

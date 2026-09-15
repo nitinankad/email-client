@@ -130,6 +130,29 @@ change the `?from=`/`?to=` query params) to simulate different senders, threads
 
 ---
 
+### Importing a raw email manually
+
+Mail normally appears only when Cloudflare Email Routing delivers it to the
+Worker. To import a one-off `.eml` (RFC-822) file that never went through the
+Worker, POST it to the auth-protected `/api/import` endpoint:
+
+```bash
+# get a session token
+TOKEN=$(curl -s -X POST https://<your-worker-url>/api/login \
+  -H 'Content-Type: application/json' -d '{"password":"YOUR_AUTH_PASSWORD"}' | jq -r .token)
+
+# import the raw message
+curl -X POST https://<your-worker-url>/api/import \
+  -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: message/rfc822' \
+  --data-binary @message.eml
+```
+
+It parses and stores exactly like inbound mail (threading, attachments, headers)
+and then shows up in the client. Note: the `.eml` must be the **original**
+message — an export that a downstream provider re-encrypted (e.g. a ProtonMail
+PGP-wrapped copy) will import with an unreadable encrypted body.
+
 ## 3. Deploy
 
 **Worker:**
