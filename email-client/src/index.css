@@ -428,6 +428,9 @@ select {
   border-radius: var(--radius);
   background: var(--panel);
   overflow: hidden;
+  /* Flex items with overflow:hidden get min-height:0 and would be squished to
+     fit the viewport; keep natural height so the list scrolls instead. */
+  flex-shrink: 0;
 }
 .message.outbound {
   background: rgba(109, 139, 255, 0.05);
