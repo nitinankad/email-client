@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Folder, ThreadSummary } from "../types";
-import { MailIcon, SearchIcon, StarFillIcon } from "../icons";
+import { MailIcon, MenuIcon, SearchIcon, StarFillIcon } from "../icons";
 import { displayName, formatTime } from "../util";
 
 export default function ThreadList({
@@ -10,6 +10,7 @@ export default function ThreadList({
   selectedId,
   onSelect,
   onSearch,
+  onMenu,
 }: {
   folder: Folder;
   threads: ThreadSummary[];
@@ -17,13 +18,19 @@ export default function ThreadList({
   selectedId: string | null;
   onSelect: (t: ThreadSummary) => void;
   onSearch: (q: string) => void;
+  onMenu: () => void;
 }) {
   const [q, setQ] = useState("");
 
   return (
     <div className="list-pane">
       <div className="list-header">
-        <div className="list-title">{folder === "all" ? "All Mail" : folder}</div>
+        <div className="list-title-row">
+          <button className="menu-btn" onClick={onMenu} title="Menu">
+            <MenuIcon />
+          </button>
+          <div className="list-title">{folder === "all" ? "All Mail" : folder}</div>
+        </div>
         <div className="search">
           <SearchIcon />
           <input

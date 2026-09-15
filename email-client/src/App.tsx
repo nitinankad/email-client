@@ -21,6 +21,7 @@ export default function App() {
   const [composerOpen, setComposerOpen] = useState(false);
   const [intent, setIntent] = useState<ComposeIntent | null>(null);
   const [importStatus, setImportStatus] = useState("");
+  const [navOpen, setNavOpen] = useState(false);
 
   const loadThreads = useCallback(
     async (f: Folder, q: string) => {
@@ -105,15 +106,21 @@ export default function App() {
   }
 
   return (
-    <div className={`app ${selected ? "reading" : ""}`}>
+    <div className={`app ${selected ? "reading" : ""} ${navOpen ? "nav-open" : ""}`}>
+      {navOpen && <button className="nav-backdrop" aria-label="Close menu" onClick={() => setNavOpen(false)} />}
+
       <Sidebar
         folder={folder}
         onFolder={(f) => {
           setFolder(f);
           setSelected(null);
           setQuery("");
+          setNavOpen(false);
         }}
-        onCompose={() => openCompose(null)}
+        onCompose={() => {
+          openCompose(null);
+          setNavOpen(false);
+        }}
         onImport={handleImport}
         importStatus={importStatus}
         inboxUnread={inboxUnread}
@@ -128,6 +135,7 @@ export default function App() {
         selectedId={selected}
         onSelect={(t) => setSelected(t.threadId)}
         onSearch={setQuery}
+        onMenu={() => setNavOpen(true)}
       />
 
       <ThreadView
