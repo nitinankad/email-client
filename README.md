@@ -4,6 +4,8 @@ A single-user email client for a custom domain, built on
 **Cloudflare Email Routing + Workers + D1** for inbound/storage and
 **Resend** for outbound.
 
+![Mailbox](./media/mailbox.png)
+
 - **Inbound** — Cloudflare Email Routing pipes incoming mail to a Worker's
   `email()` handler, which parses the MIME with `postal-mime` and stores it in D1.
 - **Storage/API** — the same Worker exposes a small JSON API (Hono) over the D1
