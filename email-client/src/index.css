@@ -142,6 +142,11 @@ select {
 }
 
 @media (max-width: 640px) {
+  /* Never allow horizontal page scroll on phones. */
+  .app {
+    overflow-x: hidden;
+  }
+
   /* Full-screen composer on phones. */
   .modal-overlay {
     padding: 0;
@@ -153,17 +158,67 @@ select {
     border-radius: 0;
     border: none;
   }
-  .composer textarea {
-    min-height: 140px;
-  }
-  .read-header,
-  .messages {
+  .composer-head,
+  .composer-foot {
     padding-left: 16px;
     padding-right: 16px;
   }
-  /* Give per-message reply actions room; hide date to avoid crowding. */
+  .composer-row {
+    padding: 0 16px;
+  }
+  .composer-row label {
+    width: 40px;
+  }
+  .composer textarea {
+    min-height: 140px;
+    padding: 14px 16px;
+  }
+  .composer-foot {
+    flex-wrap: wrap;
+  }
+  .composer-attachments {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .attach-chip.static .name {
+    max-width: 150px;
+  }
+
+  /* Reading pane */
+  .read-header {
+    padding: 12px 16px;
+    gap: 8px;
+    align-items: center;
+  }
+  .read-subject {
+    font-size: 16px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .toolbar .icon-btn {
+    width: 32px;
+    height: 32px;
+  }
+  .messages {
+    padding: 16px 16px 32px;
+    gap: 12px;
+  }
+  .msg-head {
+    padding: 12px 14px;
+    gap: 10px;
+  }
+  .msg-body,
+  .attachments {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+  /* Hide the date in the per-message header to make room for the actions. */
   .msg-head-right .msg-date {
     display: none;
+  }
+  .msg-who .addr,
+  .msg-who .to {
+    max-width: 42vw;
   }
 }
 
