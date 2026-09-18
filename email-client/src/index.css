@@ -933,6 +933,7 @@ select {
 .composer {
   width: 640px;
   max-width: 100%;
+  min-width: 0;
   max-height: 90vh;
   background: var(--panel);
   border: 1px solid var(--border);
@@ -967,6 +968,7 @@ select {
   align-items: center;
   gap: 10px;
   padding: 0 18px;
+  min-width: 0;
   border-bottom: 1px solid var(--border-soft);
 }
 .composer-row label {
@@ -978,6 +980,8 @@ select {
 .composer-row input,
 .composer-row select {
   flex: 1;
+  min-width: 0;
+  max-width: 100%;
   border: none;
   background: none;
   outline: none;
