@@ -29,6 +29,12 @@ body,
   margin: 0;
 }
 
+html {
+  /* Stop iOS/Safari from auto-inflating text when it thinks a column is wide. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
   background: var(--bg);
   color: var(--text);
@@ -368,6 +374,9 @@ select {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  /* Grid items default to min-width:auto; without this, nowrap subjects/snippets
+     blow the column past the viewport on mobile (and trigger iOS text inflation). */
+  min-width: 0;
   background: var(--bg);
 }
 .list-header {
@@ -508,6 +517,7 @@ select {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  min-width: 0;
   background: var(--bg);
 }
 .read-header {
