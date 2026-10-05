@@ -389,6 +389,13 @@ select {
   gap: 6px;
   margin-bottom: 10px;
 }
+.mark-all-btn {
+  margin-left: auto;
+}
+.mark-all-btn:disabled {
+  opacity: 0.35;
+  pointer-events: none;
+}
 .list-title {
   font-size: 17px;
   font-weight: 650;

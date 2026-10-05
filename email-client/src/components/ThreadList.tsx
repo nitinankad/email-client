@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Folder, ThreadSummary } from "../types";
-import { MailIcon, MenuIcon, SearchIcon, StarFillIcon } from "../icons";
+import { CheckAllIcon, MailIcon, MenuIcon, SearchIcon, StarFillIcon } from "../icons";
 import { displayName, formatTime } from "../util";
 
 export default function ThreadList({
@@ -11,6 +11,7 @@ export default function ThreadList({
   onSelect,
   onSearch,
   onMenu,
+  onMarkAllRead,
 }: {
   folder: Folder;
   threads: ThreadSummary[];
@@ -19,8 +20,11 @@ export default function ThreadList({
   onSelect: (t: ThreadSummary) => void;
   onSearch: (q: string) => void;
   onMenu: () => void;
+  onMarkAllRead: () => Promise<void>;
 }) {
   const [q, setQ] = useState("");
+  const [marking, setMarking] = useState(false);
+  const hasUnread = threads.some((t) => t.unread > 0);
 
   return (
     <div className="list-pane">
@@ -30,6 +34,22 @@ export default function ThreadList({
             <MenuIcon />
           </button>
           <div className="list-title">{folder === "all" ? "All Mail" : folder}</div>
+          <button
+            className="icon-btn mark-all-btn"
+            title="Mark all as read"
+            aria-label="Mark all as read"
+            disabled={!hasUnread || marking}
+            onClick={async () => {
+              setMarking(true);
+              try {
+                await onMarkAllRead();
+              } finally {
+                setMarking(false);
+              }
+            }}
+          >
+            <CheckAllIcon />
+          </button>
         </div>
         <div className="search">
           <SearchIcon />

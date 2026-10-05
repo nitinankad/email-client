@@ -126,6 +126,12 @@ export const MailIcon = (p: P) => (
   </svg>
 );
 export const SendIcon = SentIcon;
+export const CheckAllIcon = (p: P) => (
+  <svg {...base(p)}>
+    <path d="M2 12.5 6.5 17 16 7.5" />
+    <path d="m12 16 1 1 9.5-9.5" />
+  </svg>
+);
 export const RefreshIcon = (p: P) => (
   <svg {...base(p)}>
     <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />

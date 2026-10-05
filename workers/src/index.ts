@@ -251,6 +251,27 @@ async function applyFlags(c: any, where: "id" | "thread_id", key: string) {
 app.post("/api/emails/:id/flags", (c) => applyFlags(c, "id", c.req.param("id")));
 app.post("/api/threads/:id/flags", (c) => applyFlags(c, "thread_id", c.req.param("id")));
 
+// Mark every thread in a folder read (not just the visible page).
+app.post("/api/folders/:folder/read", async (c) => {
+  const res = await c.env.DB.prepare(
+    `UPDATE emails SET is_read = 1
+      WHERE is_read = 0
+        AND thread_id IN (
+          SELECT thread_id FROM (
+            SELECT thread_id,
+                   MAX(is_starred) AS starred,
+                   MAX(is_archived) AS archived,
+                   MAX(is_trashed) AS trashed,
+                   MAX(CASE WHEN direction = 'outbound' THEN 1 ELSE 0 END) AS has_outbound
+              FROM emails
+             GROUP BY thread_id
+             ${threadSummaryHaving(c.req.param("folder"))}
+          )
+        )`,
+  ).run();
+  return c.json({ ok: true, updated: res.meta.changes ?? 0 });
+});
+
 // ---- attachment download --------------------------------------------------
 app.get("/api/attachments/:id", async (c) => {
   const row = await c.env.DB.prepare(

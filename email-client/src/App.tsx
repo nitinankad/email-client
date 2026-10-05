@@ -70,6 +70,21 @@ export default function App() {
     refreshUnread();
   }, [folder, query, loadThreads, refreshUnread]);
 
+  async function markAllRead() {
+    try {
+      if (query) {
+        // With a search active, only mark what the user can see.
+        const unread = threads.filter((t) => t.unread > 0);
+        await Promise.all(unread.map((t) => api.setThreadFlags(t.threadId, { isRead: true })));
+      } else {
+        await api.markFolderRead(folder);
+      }
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) setAuthed(false);
+    }
+    refreshAll();
+  }
+
   function logout() {
     setToken(null);
     setAuthed(false);
@@ -136,6 +151,7 @@ export default function App() {
         onSelect={(t) => setSelected(t.threadId)}
         onSearch={setQuery}
         onMenu={() => setNavOpen(true)}
+        onMarkAllRead={markAllRead}
       />
 
       <ThreadView

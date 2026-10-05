@@ -111,6 +111,9 @@ export const api = {
   setThreadFlags: (id: string, flags: Record<string, boolean>) =>
     request(`/api/threads/${encodeURIComponent(id)}/flags`, { method: "POST", body: JSON.stringify(flags) }),
 
+  markFolderRead: (folder: Folder) =>
+    request(`/api/folders/${encodeURIComponent(folder)}/read`, { method: "POST" }),
+
   send: (payload: {
     from?: string;
     fromName?: string;
