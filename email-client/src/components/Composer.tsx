@@ -34,20 +34,68 @@ function readFile(file: File): Promise<Attachment> {
   });
 }
 
+// Split on commas outside quotes/angle brackets. Segments without an "@" are
+// merged into the next one so unquoted names like `Last, First <a@b.com>` survive.
+function splitAddressList(input: string): string[] {
+  const raw: string[] = [];
+  let cur = "";
+  let inQuote = false;
+  let inAngle = false;
+  for (let i = 0; i < input.length; i++) {
+    const ch = input[i];
+    if (ch === "\\" && inQuote && i + 1 < input.length) {
+      cur += ch + input[++i];
+      continue;
+    }
+    if (ch === '"') inQuote = !inQuote;
+    else if (ch === "<" && !inQuote) inAngle = true;
+    else if (ch === ">" && !inQuote) inAngle = false;
+    if ((ch === "," || ch === ";") && !inQuote && !inAngle) {
+      raw.push(cur);
+      cur = "";
+    } else {
+      cur += ch;
+    }
+  }
+  raw.push(cur);
+
+  const out: string[] = [];
+  let pending = "";
+  for (const seg of raw) {
+    const joined = pending ? `${pending},${seg}` : seg;
+    if (joined.includes("@")) {
+      out.push(joined.trim());
+      pending = "";
+    } else {
+      pending = joined;
+    }
+  }
+  if (pending.trim()) out.push(pending.trim());
+  return out.filter(Boolean);
+}
+
+function unquoteName(name: string): string {
+  const n = name.trim();
+  if (n.length >= 2 && n.startsWith('"') && n.endsWith('"')) {
+    return n.slice(1, -1).replace(/\\(.)/g, "$1");
+  }
+  return n;
+}
+
 function parseAddresses(input: string): Address[] {
-  return input
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .map((token) => {
-      const m = token.match(/^(.*)<(.+)>$/);
-      if (m) return { name: m[1].trim() || undefined, address: m[2].trim() };
-      return { address: token };
-    });
+  return splitAddressList(input).map((token) => {
+    const m = token.match(/^(.*)<(.+)>$/);
+    if (m) return { name: unquoteName(m[1]) || undefined, address: m[2].trim() };
+    return { address: token };
+  });
+}
+
+function quoteName(name: string): string {
+  return /[(),.:;<>@[\]\\"]/.test(name) ? `"${name.replace(/(["\\])/g, "\\$1")}"` : name;
 }
 
 function addrToInput(list: Address[]): string {
-  return list.map((a) => (a.name ? `${a.name} <${a.address}>` : a.address)).join(", ");
+  return list.map((a) => (a.name ? `${quoteName(a.name)} <${a.address}>` : a.address)).join(", ");
 }
 
 function escapeHtml(s: string): string {

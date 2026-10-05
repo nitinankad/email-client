@@ -19,8 +19,13 @@ interface SendArgs {
   attachments?: OutboundAttachment[];
 }
 
+// RFC 5322: display names containing specials (e.g. a comma) must be quoted.
+function quoteName(name: string): string {
+  return /[(),.:;<>@[\]\\"]/.test(name) ? `"${name.replace(/(["\\])/g, "\\$1")}"` : name;
+}
+
 function fmt(a: Address): string {
-  return a.name ? `${a.name} <${a.address}>` : a.address;
+  return a.name ? `${quoteName(a.name)} <${a.address}>` : a.address;
 }
 
 export interface SendResult {
@@ -29,9 +34,7 @@ export interface SendResult {
 }
 
 export async function sendViaResend(env: Env, args: SendArgs): Promise<SendResult> {
-  const from = args.fromName
-    ? `${args.fromName} <${args.fromAddress}>`
-    : args.fromAddress;
+  const from = fmt({ name: args.fromName, address: args.fromAddress });
 
   const headers: Record<string, string> = {};
   if (args.inReplyTo) headers["In-Reply-To"] = args.inReplyTo;
